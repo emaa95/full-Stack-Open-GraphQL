@@ -1,6 +1,7 @@
 const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
 const { default: gql } = require('graphql-tag')
+const { v4: uuidv4 } = require('uuid')
 
 let authors = [
   {
@@ -94,10 +95,6 @@ let books = [
   },
 ]
 
-/*
-  you can remove the placeholder query once your first one has been implemented 
-*/
-
 const typeDefs = gql`
   
   type Book {
@@ -110,6 +107,7 @@ const typeDefs = gql`
   type Author {
     name: String!
     id: ID!
+    born: Int
     bookCount: Int!
   }
 
@@ -118,6 +116,15 @@ const typeDefs = gql`
     authorCount: Int
     allBooks(author: String, genre: String): [Book!]!
     allAuthors: [Author!]!
+  }
+
+  type Mutation {
+    addBook (
+      title: String!
+      published: Int!
+      author: String!
+      genres: [String]!
+    ) : Book
   }
 `
 
@@ -142,6 +149,16 @@ const resolvers = {
   },
   Author: {
     bookCount: (root) => books.filter(book => book.author === root.name).length,
+  },
+  Mutation: {
+    addBook: (root, args) => {
+      const book = { ...args, id: uuidv4() }
+      if (!authors.some(a => a.name === book.author)) {
+        authors = authors.concat({ name: book.author, id: uuidv4() });
+      }
+      books = books.concat(book)
+      return book
+    }
   }
 }
 
