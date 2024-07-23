@@ -1,5 +1,6 @@
 import { ALL_AUTHORS } from "../queries"
 import { useQuery } from '@apollo/client'
+import SetBornForm from "./SetBornForm"
 
 const Authors = ({show}) => {
   
@@ -32,6 +33,8 @@ const Authors = ({show}) => {
           ))}
         </tbody>
       </table>
+
+      <SetBornForm />
     </div>
   )
 }
