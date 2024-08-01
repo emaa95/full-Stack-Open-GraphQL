@@ -12,8 +12,16 @@ const NewBook = ({ show, setError }) => {
   const [ createBook ] = useMutation(CREATE_BOOK, {
     refetchQueries: [ { query: ALL_AUTHORS }, { query: ALL_BOOKS} ],
     onError: (error) => {
-      const messages = error.graphQLErrors.map(e => e.message).join('\n')
-      setError(messages)
+      let message = 'An unknown error occurred';
+      
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        message = error.graphQLErrors.map(e => e.message).join(', ');
+      } else if (error.networkError) {
+        message = `Network error: ${error.networkError.message}`;
+      }
+
+      setError(message);
+      console.log('Error details:', message);
     }
   })
 
