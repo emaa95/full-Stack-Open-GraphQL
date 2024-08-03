@@ -53,3 +53,24 @@ export const LOGIN = gql `
     }
   }
 `
+
+export const ME = gql `
+  query {
+  me {
+    username
+    favoriteGenre
+  }
+}
+`
+
+export const BOOKS_WITH_GENRE = gql `
+  query getAllBooks($genre: String) {
+    allBooks(genre: $genre) {
+    title
+    author {
+      name
+    }
+    published
+  }
+  }
+`

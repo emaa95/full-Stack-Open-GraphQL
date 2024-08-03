@@ -10,7 +10,7 @@ const NewBook = ({ show, setError }) => {
   const [genres, setGenres] = useState([])
 
   const [ createBook ] = useMutation(CREATE_BOOK, {
-    refetchQueries: [ { query: ALL_AUTHORS }, { query: ALL_BOOKS} ],
+    refetchQueries: [ { query: ALL_AUTHORS } ],
     onError: (error) => {
       let message = 'An unknown error occurred';
       
@@ -22,6 +22,13 @@ const NewBook = ({ show, setError }) => {
 
       setError(message);
       console.log('Error details:', message);
+    },
+    update: (cache, { data: { addBook } }) => {
+      cache.updateQuery({ query: ALL_BOOKS }, ({ allBooks }) => {
+        return {
+          allBooks: allBooks.concat(addBook),
+        }
+      })
     }
   })
 

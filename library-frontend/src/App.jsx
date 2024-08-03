@@ -5,19 +5,13 @@ import NewBook from "./components/NewBook";
 import Notify from "./components/Notify";
 import LoginForm from "./components/LoginForm";
 import { useApolloClient } from "@apollo/client";
+import Recommend from "./components/Recommend";
 
 const App = () => {
   const [page, setPage] = useState("authors");
   const [errorMessage, setErrorMessage] = useState(null);
   const [token, setToken] = useState(null);
   const client = useApolloClient();
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('user-token');
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
 
   const notify = (message) => {
     console.log('Notifying:', message); 
@@ -27,10 +21,18 @@ const App = () => {
     }, 10000);
   };
 
+  useEffect(() => {
+    const storedToken = localStorage.getItem("user-token");
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
+
   const logout = () => {
+    client.resetStore();
     setToken(null);
     localStorage.clear();
-    client.resetStore();
+    setPage('books')
   };
 
   return (
@@ -44,18 +46,21 @@ const App = () => {
         ) : (
           <>
             <button onClick={() => setPage("add")}>add book</button>
+            <button onClick={() => setPage("recommend")}>recommend</button>
             <button onClick={logout}>logout</button>
           </>
         )}
       </div>
 
-     
       <Authors show={page === "authors"} />
       <Books show={page === "books"} />
       {!token ? (
         <LoginForm show={page === "login"} setToken={setToken} setError={notify} />
       ) : (
-        <NewBook show={page === "add"} setError={notify} />
+        <div>
+          <NewBook show={page === "add"} setError={notify} />
+          <Recommend show={page === "recommend"}/>
+        </div>
       )}
     </div>
   );
