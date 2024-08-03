@@ -1,6 +1,7 @@
 import { useMutation } from '@apollo/client'
 import { useState } from 'react'
 import { ALL_AUTHORS, ALL_BOOKS, CREATE_BOOK } from '../queries'
+import { updateCache } from '../App'
 
 const NewBook = ({ show, setError }) => {
   const [title, setTitle] = useState('')
@@ -23,13 +24,10 @@ const NewBook = ({ show, setError }) => {
       setError(message);
       console.log('Error details:', message);
     },
-    update: (cache, { data: { addBook } }) => {
-      cache.updateQuery({ query: ALL_BOOKS }, ({ allBooks }) => {
-        return {
-          allBooks: allBooks.concat(addBook),
-        }
-      })
-    }
+    update: (cache, response) => {
+      updateCache(cache, { query: ALL_BOOKS }, 
+        response.data.addBook)    
+    },
   })
 
   if (!show) {
@@ -39,6 +37,11 @@ const NewBook = ({ show, setError }) => {
   const submit = async (event) => {
     event.preventDefault()
 
+    if (!title || !author || !published || genres.length === 0) {
+      setError('All fields are required and at least one genre must be added.');
+      return;
+    }
+    
     createBook({ variables: { title, published: parseInt(published), author, genres } })
     console.log('add book...')
 

@@ -4,14 +4,39 @@ import Books from "./components/Books";
 import NewBook from "./components/NewBook";
 import Notify from "./components/Notify";
 import LoginForm from "./components/LoginForm";
-import { useApolloClient } from "@apollo/client";
+import { useApolloClient, useSubscription } from "@apollo/client";
 import Recommend from "./components/Recommend";
+import { ALL_BOOKS, BOOK_ADDED } from "./queries";
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const updateCache = (cache, query, addedBook) => {
+
+  cache.updateQuery(query, ({ allBooks }) => {
+    return {
+      allBooks: allBooks.concat(addedBook)
+    }
+  })
+}
 
 const App = () => {
   const [page, setPage] = useState("authors");
   const [errorMessage, setErrorMessage] = useState(null);
   const [token, setToken] = useState(null);
   const client = useApolloClient();
+
+  useSubscription(BOOK_ADDED, {
+    onData: ({ data }) => {
+      console.log(data)
+      const addedBook = data.data.bookAdded
+      try { notify(`${addedBook.title} added successfully`)
+      updateCache(client.cache, { query: ALL_BOOKS }, addedBook)}
+      catch {
+        console.log('error')
+      }},
+      onError: (error) => {
+        console.error('Error in subscription:', error);
+      }
+  })
 
   const notify = (message) => {
     console.log('Notifying:', message); 

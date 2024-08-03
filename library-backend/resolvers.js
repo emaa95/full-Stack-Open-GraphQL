@@ -43,47 +43,64 @@ const resolvers = {
     bookCount: async (root) => Book.countDocuments({ author: root._id }),
   },
   Mutation: {
+    
     addBook: async (root, args, context) => {
-      try {
-        const currentUser = context.currentUser;
+      const foundBook = await Book.findOne({ title: args.title })
+      const foundAuthor = await Author.findOne({ name: args.author})
+      const currentUser = context.currentUser
 
-        if (!currentUser) {
-          throw new GraphQLError('Not authenticated', {
-            extensions: { code: 'BAD_USER_INPUT' }
-          });
-        }
-        if (args.title.length < 3) {
-          throw new GraphQLError('Book title must be at least 3 characters long', {
-            extensions: { code: 'BAD_USER_INPUT' }
-          });
-        }
-        if (args.genres.length === 0) {
-          throw new GraphQLError('At least one genre must be provided', {
-            extensions: { code: 'BAD_USER_INPUT' }
-          });
-        }
-        if (args.published < 0) {
-          throw new GraphQLError('Publication year must be a positive integer', {
-            extensions: { code: 'BAD_USER_INPUT' }
-          });
-        }
-
-        let author = await Author.findOne({ name: args.author });
-
-        if (!author) {
-          author = new Author({ name: args.author });
-          await author.save();
-        }
-
-        const book = new Book({ ...args, author: author._id });
-        await book.save();
-        pubsub.publish('BOOK_ADDED', { bookAdded: book }) 
-        return book;
-      } catch (error) {
-        throw new GraphQLError('Error adding book: ' + error.message, {
-          extensions: { code: 'INTERNAL_SERVER_ERROR' }
-        });
+      if (!currentUser) {
+        throw new GraphQLError('user not authenticated', {
+          extensions: {
+            code: 'UNAUTHENTICATED'
+          }
+        })
       }
+
+      if (foundBook) {
+        throw new GraphQLError('Book already exists', {
+          extensions: {
+              code: "BAD_REQUEST",
+              invalidArgs: args.title,
+          }
+        }
+       ) 
+      }
+
+      if (!foundAuthor) {
+        const author = new Author(({name: args.author}))
+        try {
+          await author.save()
+        } catch (error) {
+          throw new GraphQLError('Saving author failed', {
+            extensions: {
+                code: "BAD_REQUEST_INPUT",
+                invalidArgs: args.author,
+                error
+            }
+          }
+         ) 
+        }
+      }
+      
+      const newAutor = await Author.findOne({ name: args.author})
+
+      const book = new Book({ ...args, author: newAutor })
+
+      try {
+        await book.save()
+      } catch (error) {
+        throw new GraphQLError('Saving book failed', {
+          extensions: {
+              code: "BAD_REQUEST",
+              invalidArgs: args,
+              error
+          }
+        }
+       ) 
+      }
+      pubsub.publish('BOOK_ADDED', { bookAdded: book }) 
+      return book
     },
     editAuthor: async (root, args, context) => {
       try {
